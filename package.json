@@ -1,0 +1,24 @@
+{
+  "name": "web-push-example",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/toshi-toma/web-push-example.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/toshi-toma/web-push-example/issues"
+  },
+  "homepage": "https://github.com/toshi-toma/web-push-example#readme",
+  "dependencies": {
+    "fastify": "^3.3.0",
+    "fastify-static": "^3.2.0"
+  }
+}
