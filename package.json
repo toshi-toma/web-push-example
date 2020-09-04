@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node ./server.js"
+    "start": "node ./server.js",
+    "format": "prettier public server.js --write"
   },
   "repository": {
     "type": "git",
@@ -18,7 +19,12 @@
   },
   "homepage": "https://github.com/toshi-toma/web-push-example#readme",
   "dependencies": {
+    "dotenv": "^8.2.0",
     "fastify": "^3.3.0",
-    "fastify-static": "^3.2.0"
+    "fastify-static": "^3.2.0",
+    "web-push": "^3.4.4"
+  },
+  "devDependencies": {
+    "prettier": "^2.1.1"
   }
 }
