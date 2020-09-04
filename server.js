@@ -16,6 +16,7 @@ fastify.register(require("fastify-static"), {
   root: path.join(__dirname, "public"),
 });
 
+// クライアントから送信されたデバイスのendpoint情報などを格納する
 const subscriber = [];
 
 fastify
@@ -43,15 +44,9 @@ fastify
     });
   })
   .post("/api/webpush/post", (request, reply) => {
-    console.log(subscriber);
-
-    // プッシュ通知で送信したい任意のデータ
-    const payload = JSON.stringify({
-      title: "通知タイトル",
-      body: "通知body",
-      url: "https://google.com",
-    });
-
+    const body = JSON.parse(request.body);
+    const message = body.message;
+    // 登録されている端末にプッシュ通知を送信する
     const promises = subscriber.map((s) => {
       return new Promise((resolve, reject) => {
         const subscription = {
@@ -61,6 +56,12 @@ fastify
             p256dh: s.p256dh,
           },
         };
+        // プッシュ通知で送信したい任意のデータ
+        const payload = JSON.stringify({
+          title: "通知が届きました(from Server)",
+          body: message,
+          url: "https://google.com",
+        });
 
         webpush
           .sendNotification(subscription, payload)

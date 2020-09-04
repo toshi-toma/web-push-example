@@ -1,5 +1,16 @@
 console.log("index.js");
 
+function arrayBufferToUnit8Array(arrayBuffer) {
+  return btoa(
+    String.fromCharCode.apply(
+      null,
+      new Uint8Array(arrayBuffer)
+    )
+  )
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+}
+
 function urlB64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding)
@@ -16,16 +27,16 @@ function urlB64ToUint8Array(base64String) {
 }
 
 const button = document.getElementById("trigger-button");
+const input = document.getElementById("message-input");
 button.onclick = () => {
   fetch("/api/webpush/post", {
     method: "POST",
-    body: "{}",
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      console.log(data);
-    });
+    body: JSON.stringify({
+      message: input.value
+    }),
+  });
 };
+
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("/sw.js").then(
@@ -39,42 +50,28 @@ if ("serviceWorker" in navigator) {
       console.log("ServiceWorker registration failed: ", err);
     }
   );
-  navigator.serviceWorker.ready.then((registration) => {
-    fetch("/api/webpush/get")
-      .then((res) => res.json())
-      .then((data) => {
-        const applicationServerKey = urlB64ToUint8Array(data.publicKey);
-        registration.pushManager
-          .subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: applicationServerKey,
-          })
-          .then((subscription) => {
-            const p256dh = btoa(
-              String.fromCharCode.apply(
-                null,
-                new Uint8Array(subscription.getKey("p256dh"))
-              )
-            )
-              .replace(/\+/g, "-")
-              .replace(/\//g, "_");
-            const auth = btoa(
-              String.fromCharCode.apply(
-                null,
-                new Uint8Array(subscription.getKey("auth"))
-              )
-            )
-              .replace(/\+/g, "-")
-              .replace(/\//g, "_");
-            fetch("api/webpush/register", {
-              method: "POST",
-              body: JSON.stringify({
-                endpoint: subscription.endpoint,
-                p256dh,
-                auth,
-              }),
-            });
-          });
-      });
+  navigator.serviceWorker.ready.then(async (registration) => {
+    // VAPIDの公開鍵を取得
+    const res = await fetch("/api/webpush/get");
+    const {publicKey} = await res.json();
+    const applicationServerKey = urlB64ToUint8Array(publicKey);
+    // プッシュ通知を購読
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: applicationServerKey,
+    });
+    // パラメータを作成
+    const endpoint = subscription.endpoint;
+    const p256dh = arrayBufferToUnit8Array(subscription.getKey("p256dh"));
+    const auth = arrayBufferToUnit8Array(subscription.getKey("auth"));
+    // サーバーに送信
+    fetch("api/webpush/register", {
+      method: "POST",
+      body: JSON.stringify({
+        endpoint,
+        p256dh,
+        auth,
+      }),
+    });
   });
 }
