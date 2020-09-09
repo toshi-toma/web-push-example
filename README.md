@@ -2,6 +2,11 @@
 
 Web Pushのサンプルプロジェクト
 
+以下のPush通知送信方法を実装
+
+- [web-push](https://github.com/web-push-libs/web-push)を利用したPush通知の送信
+- [FCM](https://firebase.google.com/docs/cloud-messaging)を利用したPush通知の送信
+
 ## Client
 - public/index.html
 - public/index.js
