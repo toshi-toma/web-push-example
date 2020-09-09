@@ -31,7 +31,7 @@ firebase.initializeApp(firebaseConfig);
 const button = document.getElementById("trigger-button-webpush-post");
 const input = document.getElementById("message-input");
 button.onclick = () => {
-  fetch("/api/webpush/post", {
+  fetch("/api/webpush/send", {
     method: "POST",
     body: JSON.stringify({
       message: input.value,
@@ -39,10 +39,10 @@ button.onclick = () => {
   });
 };
 const firebaseButtono = document.getElementById(
-  "trigger-button-webpush-post-firebase-token"
+  "trigger-button-webpush-post-firebase"
 );
 firebaseButtono.onclick = () => {
-  fetch("/api/webpush/firebase-post", {
+  fetch("/api/webpush/firebase/send", {
     method: "POST",
     body: JSON.stringify({
       message: input.value,
@@ -68,7 +68,7 @@ if ("serviceWorker" in navigator) {
     const { publicKey } = await res.json();
 
     /**
-     * /api/webpush/firebase-post 用の情報をサーバーに登録
+     * /api/webpush/firebase/send 用の情報をサーバーに登録
      */
     // FCMのトークンを取得
     const messaging = firebase.messaging();
@@ -77,7 +77,7 @@ if ("serviceWorker" in navigator) {
       vapidKey: publicKey,
     });
     // サーバーに送信
-    fetch("/api/webpush/firebase-token-post", {
+    fetch("/api/webpush/firebase/token", {
       method: "POST",
       body: JSON.stringify({
         token: fcmRegistrationToken,
@@ -85,7 +85,7 @@ if ("serviceWorker" in navigator) {
     });
 
     /*
-     * /api/webpush/post 用の情報をサーバーに登録
+     * /api/webpush/send 用の情報をサーバーに登録
      */
     // プッシュ通知を購読
     const applicationServerKey = urlB64ToUint8Array(publicKey);

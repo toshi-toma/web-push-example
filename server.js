@@ -1,10 +1,16 @@
+const path = require("path");
+
+// fastify
 const fastify = require("fastify")({
   logger: true,
 });
-const path = require("path");
+fastify.register(require("fastify-static"), {
+  root: path.join(__dirname, "public"),
+});
+
+// web-push
 const webpush = require("web-push");
 require("dotenv").config();
-
 const env = process.env;
 webpush.setVapidDetails(
   env.MAIL_SUBJECT,
@@ -12,14 +18,9 @@ webpush.setVapidDetails(
   env.VAPID_PRIVATE_KEY
 );
 
-fastify.register(require("fastify-static"), {
-  root: path.join(__dirname, "public"),
-});
-
+// firebase
 const admin = require("firebase-admin");
-
 const serviceAccount = require("./firebase-adminsdk.json");
-
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
@@ -29,6 +30,7 @@ const subscriberEndpoints = [];
 // クライアントから送信されたデバイスのトークンを格納する (/api/webpush/firebase-post 用)
 const subscriberTokens = [];
 
+// static file
 fastify
   .get("/", (request, reply) => {
     reply.sendFile("index.html");
@@ -41,7 +43,10 @@ fastify
   })
   .get("/icon.jpg", (request, reply) => {
     reply.sendFile("icon.jpg");
-  })
+  });
+
+// api
+fastify
   .get("/api/webpush/get", (request, reply) => {
     reply.send({
       publicKey: env.VAPID_PUBLIC_KEY,
@@ -53,13 +58,13 @@ fastify
       result: "ok",
     });
   })
-  .post("/api/webpush/firebase-token-post", (request, reply) => {
+  .post("/api/webpush/firebase/token", (request, reply) => {
     subscriberTokens.push(JSON.parse(request.body).token);
     reply.send({
       result: "ok",
     });
   })
-  .post("/api/webpush/post", (request, reply) => {
+  .post("/api/webpush/send", (request, reply) => {
     const body = JSON.parse(request.body);
     const message = body.message;
     // 登録されている端末にプッシュ通知を送信する
@@ -75,10 +80,10 @@ fastify
         // プッシュ通知で送信したい任意のデータ
         const payload = JSON.stringify({
           data: {
-            title: "通知が届きました(from Server)",
+            title: "タイトル from  Push Service",
             body: message,
             url: "https://google.com",
-          }
+          },
         });
 
         webpush
@@ -104,7 +109,7 @@ fastify
         reply.errorCode(400);
       });
   })
-  .post("/api/webpush/firebase-post", (request, reply) => {
+  .post("/api/webpush/firebase/send", (request, reply) => {
     const body = JSON.parse(request.body);
     const message = {
       data: { title: "タイトル from Firebase", body: body.message },
