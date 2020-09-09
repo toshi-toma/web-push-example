@@ -16,8 +16,18 @@ fastify.register(require("fastify-static"), {
   root: path.join(__dirname, "public"),
 });
 
-// クライアントから送信されたデバイスのendpoint情報などを格納する
-const subscriber = [];
+const admin = require("firebase-admin");
+
+const serviceAccount = require("./firebase-adminsdk.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
+// クライアントから送信されたデバイスのendpoint情報などを格納する (/api/webpush/post 用)
+const subscriberEndpoints = [];
+// クライアントから送信されたデバイスのトークンを格納する (/api/webpush/firebase-post 用)
+const subscriberTokens = [];
 
 fastify
   .get("/", (request, reply) => {
@@ -38,7 +48,13 @@ fastify
     });
   })
   .post("/api/webpush/register", (request, reply) => {
-    subscriber.push(JSON.parse(request.body));
+    subscriberEndpoints.push(JSON.parse(request.body));
+    reply.send({
+      result: "ok",
+    });
+  })
+  .post("/api/webpush/firebase-token-post", (request, reply) => {
+    subscriberTokens.push(JSON.parse(request.body).token);
     reply.send({
       result: "ok",
     });
@@ -47,7 +63,7 @@ fastify
     const body = JSON.parse(request.body);
     const message = body.message;
     // 登録されている端末にプッシュ通知を送信する
-    const promises = subscriber.map((s) => {
+    const promises = subscriberEndpoints.map((s) => {
       return new Promise((resolve, reject) => {
         const subscription = {
           endpoint: s.endpoint,
@@ -58,9 +74,11 @@ fastify
         };
         // プッシュ通知で送信したい任意のデータ
         const payload = JSON.stringify({
-          title: "通知が届きました(from Server)",
-          body: message,
-          url: "https://google.com",
+          data: {
+            title: "通知が届きました(from Server)",
+            body: message,
+            url: "https://google.com",
+          }
         });
 
         webpush
@@ -74,6 +92,27 @@ fastify
       });
     });
     Promise.all(promises)
+      .then(() => {
+        reply.send({
+          result: "ok",
+        });
+      })
+      .catch(() => {
+        reply.send({
+          result: "error",
+        });
+        reply.errorCode(400);
+      });
+  })
+  .post("/api/webpush/firebase-post", (request, reply) => {
+    const body = JSON.parse(request.body);
+    const message = {
+      data: { title: "タイトル from Firebase", body: body.message },
+      tokens: subscriberTokens,
+    };
+    admin
+      .messaging()
+      .sendMulticast(message)
       .then(() => {
         reply.send({
           result: "ok",

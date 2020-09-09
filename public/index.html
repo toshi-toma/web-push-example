@@ -8,8 +8,15 @@
   <body>
     <h1>Web Push Example</h1>
     <label>通知内容</label>
-    <input type="text" id="message-input">
-    <button id="trigger-button">通知を送信</button>
+    <input type="text" id="message-input" />
+    <button id="trigger-button-webpush-post">
+      通知を送信(/api/webpush/post)
+    </button>
+    <button id="trigger-button-webpush-post-firebase-token">
+      通知を送信(/api/webpush/firebase-token-post)
+    </button>
+    <script src="https://www.gstatic.com/firebasejs/7.19.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.19.1/firebase-messaging.js"></script>
     <script src="/index.js"></script>
   </body>
 </html>
